@@ -1,7 +1,6 @@
 
 
-
-setwd("C:/Users/heymansad/Documents/GitHub/HydrusCouMa/")
+setwd("C:/Users/heymansad/Documents/GitHub/day-5-macro-soil-root-modeling/")
 source("./Rscript/io_function.R") # function for this script to works
 source("./Rscript/getSUF.R") # MARSHAL
 
@@ -32,7 +31,6 @@ dt = 1
 time_sequence <- seq(20, 60, dt)
 GDD= seq(20, 60, dt)*5
 Crop_coef = 1.1*(1-exp(-(GDD/620)^3))+0.1
-
 
 for(t in time_sequence){
   tt = t-min(time_sequence)
