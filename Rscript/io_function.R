@@ -4,7 +4,9 @@ library(readxl)
 source("./Rscript/getSUF.R") # MARSHAL
 library(data.table)
 library(Matrix)
-suppressWarnings(suppressMessages(library(tidyverse)))
+library(ggplot2)
+suppressWarnings(suppressMessages(library(dplyr)))
+library(stringr)
 
 message("loading function")
 
