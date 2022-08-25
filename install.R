@@ -1,0 +1,6 @@
+install.packages("ggplot2")
+install.packages("plyr")
+install.packages("readr")
+install.packages("data.table")
+install.packages("dplyr")
+install.packages("Matrix")
