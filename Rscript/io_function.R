@@ -494,3 +494,48 @@ plot_soil <- function(SOIL, type = "SSF"){
   
   print(pl)
 }
+
+read.tlevel.out <- function (project.path, out.file = "T_Level.out", output = NULL, 
+          warn = FALSE, ...) 
+{
+  if (is.null(output) | missing(output)) {
+    output = output = c("rTop", "rRoot", "vTop", "vRoot", 
+                        "vBot", "sum(rTop)", "sum(rRoot)", "sum(vTop)", 
+                        "sum(vRoot)", "sum(vBot)", "hTop", "hRoot", "hBot", 
+                        "RunOff", "sum(Runoff)", "Volume", "sum(Infil)", 
+                        "sum(Evap)", "TLevel", "Cum(WTrans)", "SnowLayer")
+  }
+  options(warn = -1)
+  tlevel_out = data.table::fread(input = file.path(project.path, 
+                                                   out.file), fill = TRUE, blank.lines.skip = T, skip = 6, 
+                                 header = T)
+  tlevel_out = apply(tlevel_out, MARGIN = 2, FUN = as.numeric)
+  tlevel_out = na.omit(tlevel_out)
+  tlevel_out = data.frame(tlevel_out, check.names = FALSE, 
+                          row.names = NULL)
+  tstart_ind = which(tlevel_out$TLevel == 1)
+  sum_cols_ind = grep("sum", names(tlevel_out))
+  sum_col_names = names(tlevel_out)[sum_cols_ind]
+  if (length(tstart_ind) == 1) {
+    tlevel_out = tlevel_out
+  }
+  else {
+    for (i in 2:length(tstart_ind)) {
+      run1_totals = tlevel_out[(tstart_ind[i] - 1), sum_cols_ind]
+      if (i == length(tstart_ind)) {
+        run_i_ind = tstart_ind[i]:nrow(tlevel_out)
+      }
+      else {
+        run_i_ind = tstart_ind[i]:(tstart_ind[i + 1] - 
+                                     1)
+      }
+      tout_j = tlevel_out[run_i_ind, ]
+      for (j in sum_col_names) {
+        tlevel_out[run_i_ind, j] = tout_j[, j] + run1_totals[[j]]
+      }
+    }
+  }
+  options(warn = 0)
+  return(tlevel_out)
+}
+
