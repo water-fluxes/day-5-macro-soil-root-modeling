@@ -1,21 +1,17 @@
 
 
 
-library(tidyverse)
 setwd("C:/Users/heymansad/Documents/GitHub/HydrusCouMa/")
 source("./Rscript/io_function.R") # function for this script to works
 source("./Rscript/getSUF.R") # MARSHAL
 
 
-data <- data.table::fread("C:/Users/heymansad/Documents/GitHub/HydrusCouMa/www/ET0badlauchstaedt_2019", sep = " ")
-rain <- data.table::fread("C:/Users/heymansad/Documents/GitHub/HydrusCouMa/www/rainbadlauchstaedt_2019", sep = " ")
-
-
-
+data <- data.table::fread("./www/ET0badlauchstaedt_2019", sep = " ")
+rain <- data.table::fread("./www/rainbadlauchstaedt_2019", sep = " ")
 
 data %>% ggplot(aes(V1,V2))+geom_line()+xlim(65,75)
 
-all_root <- data.table::fread("C:/Users/heymansad/Documents/GitHub/HydrusCouMa/www/63_rootsystem.txt")%>%
+all_root <- data.table::fread("./www/63_rootsystem.txt")%>%
   mutate(length = sqrt((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2))
 
 all_root = root_transform(all_root)
@@ -34,6 +30,10 @@ tpots = -15000
 OUT = SOIL <- NULL
 dt = 1
 time_sequence <- seq(20, 60, dt)
+GDD= seq(20, 60, dt)*5
+Crop_coef = 1.1*(1-exp(-(GDD/620)^3))+0.1
+
+
 for(t in time_sequence){
   tt = t-min(time_sequence)
   print(t)
@@ -51,7 +51,7 @@ for(t in time_sequence){
   
   
   temp_roots <- add_hydraulics(temp_roots, hydraulics)
-  krs <- hydraulics$krs # cm4 hPa-1 d-1
+  krs <- hydraulics$krs*4 # cm4 hPa-1 d-1
   kcomp <- krs
   
   #############################
@@ -90,9 +90,10 @@ for(t in time_sequence){
   write.options.in(project.path = "./Day5", krs/75/15, kcomp/75/15)
   # message("options.in is correctly written")
   
+  Tpot = data$V2[(2+tt*24+65*24):(1+(tt+1)*24+65*24)]*Crop_coef[tt+1]
   
   atm_bc_data <- data.frame(tAtm = round(seq(1/24,1,1/24),4), Prec = rain$V1[round(tt)+65]/10, rSoil = 0, 
-                            rRoot = data$V2[(2+tt*24+65*24):(1+(tt+1)*24+65*24)], hCritA = 15000, rB = 0, hB = 0, ht = 0, 
+                            rRoot = Tpot , hCritA = 15000, rB = 0, hB = 0, ht = 0, 
                             RootDepth = 0)
   # overwrite the atmposheric boundary condition of hydrus.
   write.atmosph.in("./Day5/",
@@ -103,7 +104,7 @@ for(t in time_sequence){
                    input.pet = F)
   # message("atmosph.in is correctly written")
   
-  system("./H1D_calc.exe", show.output.on.console = F)
+  system("./H1D_calc.exe", show.output.on.console =T)
   
   hydrus <- read.nod_inf(project.path = "./Day5", 
                          out.file = paste0("Nod_Inf.out"))  
@@ -124,8 +125,7 @@ for(t in time_sequence){
   out_data = read.tlevel.out(project.path = "./Day5", out.file = paste0("T_Level.OUT"))%>%
     mutate(Time = Time + tt+65)
   OUT <- rbind(OUT, out_data)
-  
-  # Tact_hydrus <- sum(hydrus$Sink)*75*15
+
 }
 
 
@@ -153,13 +153,16 @@ SoilFlux<- SOIL %>%
 
 ggplot()+
   geom_line(aes(Time, Soil_Water_balance), data = SoilFlux)+
-  geom_segment(aes(x = day, xend = day, y = 0,yend = V1/10), size = 3, alpha = 0.2, data = rain, colour = "blue")+
+  geom_segment(aes(x = day+0.5, xend = day+0.5, y = 0,yend = V1/10), size = 3, alpha = 0.2, data = rain, colour = "blue")+
   xlim(65,105)
 
 OUT %>%
   ggplot()+
   geom_line(aes(Time, rRoot))+
-  geom_line(aes(Time, vRoot), colour = 'red')
+  geom_segment(aes(x = day+0.5, xend = day+0.5, y = 0,yend = V1/10), size = 3, alpha = 0.2, data = rain, colour = "blue")+
+  geom_line(aes(Time, vRoot), colour = 'red')+
+  xlim(65,105)+
+  ylim(0,0.75)
 
 
 
