@@ -14,7 +14,7 @@ NMat    NLay  CosAlpha
   1       1       1
 *** BLOCK B: WATER FLOW INFORMATION ************************************
 MaxIt   TolTh   TolH       (maximum number of iterations and tolerances)
-  20    0.001   0.05
+  50    0.0005   0.002
 TopInf WLayer KodTop InitCond
  t     f      -1       f
 BotInf qGWLF FreeD SeepF KodBot DrainF  hSeep
@@ -38,7 +38,7 @@ TPrint(1),TPrint(2),...,TPrint(MPL)
      Model  (0 - Feddes, 1 - S shape)  cRootMax    OmegaC
         0                                   1
        P0       P2H       P2L       P3          r2H        r2L
-      -15      -325      -600    -15000         0.5         0.1
+      -15      -325      -600    -20000         1.         1.
 POptm(1),POptm(2),...,POptm(NMat)
      -30 
 *** END OF INPUT FILE 'SELECTOR.IN' ************************************

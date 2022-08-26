@@ -62,18 +62,18 @@ root_transform <- function(all_roots){
 soil_initial <- function(soil_type = stype, field_capacity = 0.5){
   if(soil_type == "sandy loam"){
     soil <- data.frame(id=1:101,
-                       z = sort(seq(-200,0,2), decreasing = T),
+                       z = sort(seq(-100,0,1), decreasing = T),
                        value = 1,
                        psi = rep(-73.5021, 101))
   }else if (soil_type == "loam") {
     soil <- data.frame(id=1:101,
-                       z = sort(seq(-200,0,2), decreasing = T),
+                       z = sort(seq(-100,0,1), decreasing = T),
                        value = 1,
                        psi = rep(-132.869, 101))
     
   }else if (soil_type == "silty clay") {
     soil <- data.frame(id=1:101,
-                       z = sort(seq(-200,0,2), decreasing = T),
+                       z = sort(seq(-100,0,1), decreasing = T),
                        value = 1,
                        psi = rep(-354.424, 101))
   }else{
@@ -359,7 +359,7 @@ run_HydrusCouvreurMARSHAL<- function(all_roots,
       Tpot <- hydraulics$tpot_eq
       krs <- hydraulics$ksrs
       RLDWU <- temp_roots%>% # gather information by layer
-        mutate(rz2 = round((z1/2+z2/2)/2)*2)%>%
+        mutate(rz2 = round((z1+z2)/2))%>%
         dplyr::group_by(rz2)%>%
         dplyr::summarise(suf = sum(suf_eq),
                          ps = sum(psi),
@@ -373,7 +373,7 @@ run_HydrusCouvreurMARSHAL<- function(all_roots,
       Tpot <- hydraulics$tpot
       krs <- hydraulics$krs # cm4 hPa-1 d-1
       RLDWU <- temp_roots%>% # gather information by layer
-        mutate(rz2 = round((z1/2+z2/2)/2)*2)%>%
+        mutate(rz2 = round((z1+z2)/2))%>%
         dplyr::group_by(rz2)%>%
         dplyr::summarise(suf = sum(suf1),
                          ps = sum(psi),
@@ -386,7 +386,7 @@ run_HydrusCouvreurMARSHAL<- function(all_roots,
     Beta <- rep(0, 101)
     
     RWU_tmp <- temp_roots%>% # gather information by layer
-      mutate(rz2 = round((z1/2+z2/2)/2)*2)%>%
+      mutate(rz2 = round((z1+z2)/2))%>%
       dplyr::group_by(rz2)%>%
       dplyr::summarise(suf = sum(suf1),
                        suf_eq = sum(suf_eq),
@@ -405,8 +405,8 @@ run_HydrusCouvreurMARSHAL<- function(all_roots,
     #include the Standard upatke fraction
     Beta[which(soil$z %in% RLDWU$rz2 )] <- rev(RLDWU$suf) # from above to below
     SSF <- data.frame(suf = Beta, h = soil$psi)
-    SUF <- rev(RLDWU$suf[RLDWU$rz2 >= -200 & RLDWU$rz2 <= 0])
-    Jr <- rev(RLDWU$jr[RLDWU$rz2 >= -200 & RLDWU$rz2 <= 0])
+    SUF <- rev(RLDWU$suf[RLDWU$rz2 >= -100 & RLDWU$rz2 <= 0])
+    Jr <- rev(RLDWU$jr[RLDWU$rz2 >= -100 & RLDWU$rz2 <= 0])
     # overwirte the profile boundary condition
     write.profile.dat(project.path = "./CouvreurV2", SSF)
     # print("profile.dat correctly overwrited")
@@ -425,7 +425,7 @@ run_HydrusCouvreurMARSHAL<- function(all_roots,
     
     # Good idea to check if Tpot works similarly
     atm_bc_data <- data.frame(tAtm = 1, Prec = 0, rSoil = 0, 
-                              rRoot = Tact/75/15/2, hCritA = 15000, rB = 0, hB = 0, ht = 0, 
+                              rRoot = Tact/75/15, hCritA = 15000, rB = 0, hB = 0, ht = 0, 
                               RootDepth = 0)
     # overwrite the atmposheric boundary condition of hydrus.
     write.atmosph.in("./CouvreurV2/",
