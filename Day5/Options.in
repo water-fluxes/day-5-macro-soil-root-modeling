@@ -4,7 +4,7 @@ Stress function ? (1=yes,2=no)   BCtp    lDayVar
 1				 2        f
  
 Threshold value of the stress function [cm]
--30000
+-15000
  
 Equivalent conductance of the whole root system [cm/hPa/day]
 2.27914516347481e-05     *Maize: 0.0001/75/15
