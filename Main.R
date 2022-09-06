@@ -1,6 +1,6 @@
 
 
-setwd("C:/Users/heymansad/Documents/GitHub/day-5-macro-soil-root-modeling/")
+setwd("~/GitHub/day-5-macro-soil-root-modeling/")
 source("./Rscript/io_function.R") # function for this script to works
 source("./Rscript/getSUF.R") # MARSHAL
 
@@ -30,7 +30,7 @@ OUT = SOIL <- NULL
 dt = 1
 time_sequence <- seq(20, 60, dt)
 GDD= seq(20, 60, dt)*5
-Crop_coef = 1.1*(1-exp(-(GDD/620)^3))+0.06
+Crop_coef = 0.9*(1-exp(-(GDD/480)^3))
 
 d = tibble(Time = 1:41, Crop_coef)
 d%>%ggplot(aes(Time, Crop_coef))+geom_line()
@@ -52,7 +52,7 @@ for(t in time_sequence){
   
   
   temp_roots <- add_hydraulics(temp_roots, hydraulics)
-  krs <- hydraulics$krs*4 # cm4 hPa-1 d-1
+  krs <-  3*hydraulics$krs/15/75 # cm4 hPa-1 d-1
   kcomp <- krs
   
   #############################
@@ -69,7 +69,7 @@ for(t in time_sequence){
   ##############################
   
   Beta <- rep(0, 101)
-    RLDWU <- temp_roots%>% # gather information by layer
+  RLDWU <- temp_roots%>% # gather information by layer
     mutate(rz2 = round((z1+z2)/2))%>%
     dplyr::group_by(rz2)%>%
     dplyr::summarise(suf = sum(suf1),
@@ -88,12 +88,12 @@ for(t in time_sequence){
   # message("profile.dat is correctly written")
 
 
-  write.options.in(project.path = "./Day5", krs/75/15, kcomp/75/15)
+  write.options.in(project.path = "./Day5", krs, kcomp)
   # message("options.in is correctly written")
   
   Tpot = data$V2[(2+tt*24+65*24):(1+(tt+1)*24+65*24)]*Crop_coef[tt+1]
   
-  atm_bc_data <- data.frame(tAtm = round(seq(1/24,1,1/24),4), Prec = rain$V1[round(tt)+65]/24, rSoil = 0, 
+  atm_bc_data <- data.frame(tAtm = round(seq(1/24,1,1/24),4), Prec = 0, rSoil = 0, 
                             rRoot = Tpot , hCritA = 150000, rB = 0, hB = 0, ht = 0, 
                             RootDepth = 0)
   # overwrite the atmposheric boundary condition of hydrus.
@@ -104,7 +104,7 @@ for(t in time_sequence){
                    hCritS = 15000,
                    input.pet = F)
   # message("atmosph.in is correctly written")
-  system("./H1D_calc.exe", show.output.on.console =F)
+  system("./h1d_calc.exe", show.output.on.console =F)
   
   hydrus <- read.nod_inf(project.path = "./Day5", 
                          out.file = paste0("Nod_Inf.out"))  
@@ -145,42 +145,26 @@ SOIL%>%
   viridis::scale_colour_viridis()+
   xlim(-60,0)
 
-rain$day = 1:nrow(rain)
 
-SoilFlux<- SOIL %>%
-  dplyr::group_by(Time)%>%
-  dplyr::summarise(Soil_Water_balance = -sum(Flux))%>%
-  ungroup()
-
-
-DeltaH = tibble(Tact = OUT$vRoot, Krs = OUT$Krs, Time = OUT$Time, hRoot = OUT$hRoot)%>%
-  mutate(D = Tact/(Krs/75/15),
-         hLeaf = hRoot - D)
-
-DeltaH%>%
+OUT%>%
   ggplot()+
-  geom_line(aes(Time, hLeaf))+
-  geom_line(aes(Time, hRoot), colour = "blue")
-
-DeltaH%>%
-  ggplot()+
-  geom_line(aes(Time, Krs))
-
-ggplot()+
-  geom_line(aes(Time, Soil_Water_balance), data = SoilFlux)+
-  geom_segment(aes(x = day+0.5, xend = day+0.5, y = 0,yend = V1/10), size = 3, alpha = 0.2, data = rain, colour = "blue")+
-  xlim(65,105)
+  geom_line(aes(Time, PhLeaf))+
+  geom_line(aes(Time, PhSeq), colour = "blue")
 
 OUT %>%
   ggplot()+
   geom_line(aes(Time, rRoot))+
-  geom_segment(aes(x = day+0.5, xend = day+0.5, y = 0,yend = V1/10), size = 3, alpha = 0.2, data = rain, colour = "blue")+
   geom_line(aes(Time, vRoot), colour = 'red')+
+  geom_line(aes(Time, Krs*(PhSeq+15000)), alpha = 0.3)+
+  geom_line(aes(Time, Krs*(15000)), colour = "blue", linetype = 2, alpha = 0.3)+
   xlim(65,105)+
-  ylim(0,0.75)
+  ylab("Transpiration [cm]")+
+  xlab("Time [day]")
 
-  
 
+soil <- soil_initial(soil_type = "loam", field_capacity = 0.1)
+
+OUT2 <- HydrusCouMa(all_root, soil, soil_param, conductivities)[[1]]
 
 
 

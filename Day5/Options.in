@@ -7,8 +7,8 @@ Threshold value of the stress function [cm]
 -15000
  
 Equivalent conductance of the whole root system [cm/hPa/day]
-2.27914516347481e-05     *Maize: 0.0001/75/15
+1.70935887260611e-05     *Maize: 0.0001/75/15
  
 Compensatory RWU conductance of the root system [cm/hPa/day]
-2.27914516347481e-05     *Maize: 0.0001/75/15
+1.70935887260611e-05     *Maize: 0.0001/75/15
  
