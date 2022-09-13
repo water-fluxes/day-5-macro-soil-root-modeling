@@ -54,20 +54,7 @@ for(t in time_sequence){
   temp_roots <- add_hydraulics(temp_roots, hydraulics)
   krs <-  3*hydraulics$krs/15/75 # cm4 hPa-1 d-1
   kcomp <- krs
-  
-  #############################
-  # # Calculate Kcomp
-  # Hsr <- soil$psi[which(soil$z %in% temp_roots$rz2 )]
-  # kcomp <- krs[1]
-  # if(length(unique(Hsr))> 1){
-  #   Hseq <- t(Hsr) %*% t(t(SUF))
-  #   kcomp = (Jr -  Q_dou*SUF) %*% ((Hsr-Hseq[1])*SUF)^(-1)
-  # }else{
-  #   Hseq <- unique(Hsr)
-  # }
-  # kcomp <- kcomp
-  ##############################
-  
+
   Beta <- rep(0, 101)
   RLDWU <- temp_roots%>% # gather information by layer
     mutate(rz2 = round((z1+z2)/2))%>%
