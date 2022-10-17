@@ -81,18 +81,23 @@ getSUF <- function(table_data = NULL,
   }
   # Meunier et al. 2018 Measuring and Modeling Hydraulic Lift of Lolium multiflorum Using Stable Water Isotopes
   table_data$Be <- (2*(1-table_data$rho^2))/((-2*table_data$rho^2)*(log(table_data$rho, base = exp(1))-(1/2))-1) # dimenssion less geometric param 
-  
+  # print("geometric param on root")
   if(is.null(soil_param)){
-    soil_param <- data.frame (n = 1.89, alpha = 0.075,  Ksat = 106.1, lambda = 0.5)
+    soil_param <- data.frame (n = 1.89, alpha = 0.075,  Ksat = 25, lambda = 0.5,Q_r = 0.078, Q_s = 0.43)
   }
   soil_param$m <- 1 - 1/soil_param$n # depending on the hyposthesis it could be also "m = 1 - 2/n"
-  table_soil$Se <- 1/(1+(abs(soil_param$alpha*table_soil$psi))^soil_param$n)^soil_param$m # 
+  
+  table_soil$theta_h = soil_param$Q_r+(soil_param$Q_s-soil_param$Q_r)/(1+abs(soil_param$alpha*table_soil$psi)^soil_param$n)^soil_param$m
+  table_soil$theta_h[table_soil$theta_h >= soil_param$Q_s] = soil_param$Q_s 
+  table_soil$Se = (table_soil$theta_h-soil_param$Q_r)/(soil_param$Q_s -soil_param$Q_r)
+  # table_soil$Se <- 1/(1+(abs(soil_param$alpha*table_soil$psi))^soil_param$n)^soil_param$m #
+  
+  
   # Van Genuchten 1980
-  table_soil$Ksoil <- soil_param$Ksat*table_soil$Se^soil_param$lambda*(1-(1-table_soil$Se^(soil_param$lambda/soil_param$m))^soil_param$m)^2
+  table_soil$Ksoil <- soil_param$Ksat*table_soil$Se^soil_param$lambda*(1-(1-table_soil$Se^(1/soil_param$m))^soil_param$m)^2
   table_soil$z_reso <- table_soil$z
   table_data$z_reso <- round(table_data$z2/2)*2
   table_data <- left_join(table_data, table_soil%>%select(psi,Se, Ksoil, z_reso), by= "z_reso")
-  
   ####################################################
   # Interpolates kr,kx functions
 

@@ -572,16 +572,21 @@ HydrusCouMa <- function(all_root, soil, soil_param, conductivities){
     kcomp <- krs
     
     #############################
-    # # Calculate Kcomp
-    Hsr <- soil$psi[which(soil$z %in% temp_roots$rz2 )]-(min(soil$z)-soil$z[which(soil$z %in% temp_roots$rz2 )])
-    kcomp <- krs[1]
+    Q_dou <- rev(RLDWU$jr_eq)/75/15 # 8 plant per sqare meter, then convert from mL*m-2*day-1 to cm*m-2*day-1
+    SUF = rev(RLDWU$su_eq)
+    Tact_eq = sum(Q_dou)
+    Hsr <- temp_soil$psi[temp_soil$z >= min(RLDWU$rz2) & temp_soil$z <= max(RLDWU$rz2)]# - (100 -temp_soil$z[temp_soil$z >= min(RLDWU$rz2) & temp_soil$z <= max(RLDWU$rz2)])
+    
     if(length(unique(Hsr))> 1){
-       Hseq <- t(Hsr) %*% t(t(SUF))
-       kcomp = (Jr -  Q_dou*SUF) %*% ((Hsr-Hseq[1])*SUF)^(-1)
+      up = tibble(s = SUF,j = Q_dou,h = Hsr)%>%mutate(Hseqi = s*h, as = s*Tact_eq, upper = j - as)
+      Hseq <- sum(up$Hseqi,na.omit = TRUE)
+      up <- up%>%mutate(bel = h -Hseq, belo = (bel*s)^(-1))
+      kcomp = up$upper%*%(up$belo)
     }else{
-       Hseq <- unique(Hsr)
-     }
-    kcomp <- kcomp
+      Hseq <- Hsr[1]
+    }
+    kcomp <- kcomp[1]
+    if (kcomp <= 0) {kcomp = 1E-8}
     ##############################
     
     Beta <- rep(0, 101)
